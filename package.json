@@ -7,14 +7,17 @@
     "dev": "nuxt dev",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "lint": "eslint .",
+    "lint": "eslint . && prettier . --check",
+    "lint:fix": "eslint . --fix && prettier --write --list-different .",
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.82",
     "@iconify-json/simple-icons": "^1.2.63",
     "@nuxt/ui": "^4.3.0",
-    "nuxt": "^4.2.2"
+    "eslint-config-prettier": "^10.1.8",
+    "nuxt": "^4.2.2",
+    "prettier": "^3.8.0"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.12.1",
