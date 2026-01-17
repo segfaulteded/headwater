@@ -9,19 +9,28 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint . && prettier . --check",
     "lint:fix": "eslint . --fix && prettier --write --list-different .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "drizzle:push": "drizzle-kit push",
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.82",
     "@iconify-json/simple-icons": "^1.2.63",
     "@nuxt/ui": "^4.3.0",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
     "eslint-config-prettier": "^10.1.8",
     "nuxt": "^4.2.2",
+    "pg": "^8.17.1",
     "prettier": "^3.8.0"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.12.1",
+    "@types/pg": "^8.16.0",
+    "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.1"
   },
