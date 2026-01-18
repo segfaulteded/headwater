@@ -1,4 +1,5 @@
 import {
+  date,
   pgEnum,
   pgTable,
   text,
@@ -28,3 +29,10 @@ export const appConfigTable = pgTable("appConfig", {
   dropEndpoint: text().primaryKey(),
   token: text().notNull(),
 });
+
+
+export const jobsTable = pgTable("jobs", {
+  randomId: uuid().primaryKey().defaultRandom(),
+  serialized: text().notNull(),
+  lastUpdated: date().notNull(),
+})

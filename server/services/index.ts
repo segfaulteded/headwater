@@ -1,16 +1,33 @@
 import type { ServiceType } from "~~/shared/types/services";
+import type { ExecutorJobAccept } from "../executor";
+import AnkerGamesService from "./ankergames";
+
+/// Pre-defined list of services for searching for a query
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const SERVICES: Array<Service<any>> = [
+  new AnkerGamesService(), /// Multiline
+];
 
 /**
  * Services search websites or other indexes for content to download
  */
-export abstract class Service {
+export abstract class Service<T extends { expiry: Date }> {
   abstract type(): ServiceType;
 
-  abstract query(opts: ServiceQueryOptions): ServiceQueryResponse;
+  abstract query(opts: ServiceQueryOptions): Promise<ServiceQueryResponse>;
+
+  abstract fetch(job: ExecutorJobAccept): Promise<T>;
 }
 
 export interface ServiceQueryOptions {
-  name: string;
+  query: string;
 }
 
-export type ServiceQueryResponse = Array<unknown>;
+export type ServiceQueryResponseItem = {
+  job: ExecutorJobAccept;
+  title: string;
+  description: string;
+  cover: string;
+  size?: string;
+};
+export type ServiceQueryResponse = Array<ServiceQueryResponseItem>;
