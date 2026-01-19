@@ -49,9 +49,9 @@ export default class AnkerGamesService implements Service<HTTPTransportData> {
       (v) => v instanceof HTMLElement,
     );
 
-    const resultsListings = resultsItem.map((v) =>
-      ListingResult.parse(JSON.parse(v.attributes["listing"])),
-    );
+    const resultsListings = resultsItem
+      .filter((v) => v.attributes["listing"])
+      .map((v) => ListingResult.parse(JSON.parse(v.attributes["listing"])));
 
     return resultsListings.map(
       (listing) =>

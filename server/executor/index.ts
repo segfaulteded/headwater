@@ -5,8 +5,12 @@
 
 import type { ProviderType } from "~~/shared/types/providers";
 import { PROVIDER_CREATE, type Provider } from "../providers";
-import type { ServiceQueryResponseItem} from "../services";
+import type {
+  ServiceQueryResponse,
+  ServiceQueryResponseItem,
+} from "../services";
 import { SERVICES } from "../services";
+import { ServiceType } from "~~/shared/types/services";
 
 export interface ExecutorJobAccept {
   id: string;
@@ -21,24 +25,27 @@ export interface ExecutorQuery {
 
 export class Executor {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private jobs: Map<string, Provider<any, any, any, any>> = new Map();
+  private jobs: Map<string, Provider<any, any, any, any, any>> = new Map();
 
   async search(query: ExecutorQuery) {
-    const resultsPromises = [];
+    const resultsPromises: {
+      [key: string]: Promise<ServiceQueryResponse>;
+    } = {};
     for (const service of SERVICES) {
-      resultsPromises.push(service.query({ query: query.name }));
+      resultsPromises[service.type()] = service.query({ query: query.name });
     }
-    const results = await Promise.allSettled(resultsPromises);
-    const successes: ServiceQueryResponseItem[] = [];
-    const errors: string[] = [];
-    results.forEach((result) => {
-      if (result.status === "fulfilled") {
-        successes.push(...result.value);
-        return;
+    const results: { [key: string]: ServiceQueryResponse } = {};
+    const errors: { [key: string]: string } = {};
+
+    for (const [name, promise] of Object.entries(resultsPromises)) {
+      try {
+        const result = await promise;
+        results[name] = result;
+      } catch (e) {
+        errors[name] = (e as string).toString();
       }
-      errors.push(result.reason.toString());
-    });
-    return { result: successes.flat(), errors };
+    }
+    return { results: Object.values(results).flat(), errors };
   }
 
   async accept(job: ExecutorJobAccept) {

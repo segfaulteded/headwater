@@ -21,6 +21,7 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "eslint-config-prettier": "^10.1.8",
+    "fast-fuzzy": "^1.12.0",
     "node-html-parser": "^7.0.2",
     "nuxt": "^4.2.2",
     "nuxt-security": "2.5.1",
