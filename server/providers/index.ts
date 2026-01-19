@@ -17,7 +17,10 @@ export const PROVIDER_DESERIALIZE: {
   },
   "goggamesto-provider": (_serialized) => {
     throw "Not implemented yet.";
-  }
+  },
+  "steamunderground-provider": (_serialized) => {
+    throw "Not implemented yet.";
+  },
 };
 
 export type ProviderCreator = (
@@ -37,6 +40,12 @@ export const PROVIDER_CREATE: {
     const { GOGGamesToProvider } = await import("./goggamesto");
 
     const provider = new GOGGamesToProvider(job);
+    return provider;
+  },
+  "steamunderground-provider": async (job) => {
+    const { SteamUndergroundProvider } = await import("./steamunderground");
+
+    const provider = new SteamUndergroundProvider(job);
     return provider;
   },
 };

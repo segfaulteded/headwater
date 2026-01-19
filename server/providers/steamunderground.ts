@@ -3,35 +3,31 @@ import { Provider } from ".";
 import type { ExecutorJobAccept } from "../executor";
 import type { SingleFileProcess } from "../processors";
 import { NestedSevenZipProcessor } from "../processors/7zip-nested";
-import AnkerGamesService from "../services/ankergames";
+import { SteamUndergroundService } from "../services/steamunderground";
 import type { HTTPTransportData } from "../transports/http";
 import HTTPTransport from "../transports/http";
 
-interface AnkerGamesInit {
-  job: ExecutorJobAccept;
-}
-
-export class AnkerGamesProvider extends Provider<
+export class SteamUndergroundProvider extends Provider<
   HTTPTransportData,
   SingleFileProcess,
-  AnkerGamesService,
+  SteamUndergroundService,
   HTTPTransport,
   NestedSevenZipProcessor
 > {
-  constructor(init: AnkerGamesInit) {
+  constructor(job: ExecutorJobAccept) {
     super(
-      new AnkerGamesService(),
+      new SteamUndergroundService(),
       new HTTPTransport(),
       new NestedSevenZipProcessor(),
-      init.job,
+      job,
     );
   }
 
   type(): ProviderType {
-    return "ankergames-provider";
+    return "steamunderground-provider";
   }
 
-  serialize(): Promise<ProviderSerialized> {
+  async serialize(): Promise<ProviderSerialized> {
     throw new Error("Method not implemented.");
   }
 }

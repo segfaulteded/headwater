@@ -7,7 +7,7 @@ import path from "path";
  * AnkerGames' zips always have an "inner" directory when extracted with 7z
  * It needs to be "unwrapped"
  */
-export class AnkerGamesSevenZipProcessor extends Processor<SingleFileProcess> {
+export class NestedSevenZipProcessor extends Processor<SingleFileProcess> {
   private sevenZip: SevenZipSingleProcessor = new SevenZipSingleProcessor();
 
   type(): ProcessorType {
