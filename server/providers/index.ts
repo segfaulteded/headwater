@@ -1,5 +1,5 @@
 import type { ExecutorJobAccept } from "../executor";
-import type { Processor } from "../processors";
+import type { ProcessInput, Processor } from "../processors";
 import type { Service } from "../services";
 import type { Transport } from "../transports";
 import type { ProviderType } from "~~/shared/types/providers";
@@ -8,7 +8,7 @@ import fs from "node:fs";
 
 export type ProviderDeserializer = (
   serialized: ProviderSerialized,
-) => Provider<never, never, never, never>;
+) => Provider<never, never, never, never, never>;
 export const PROVIDER_DESERIALIZE: {
   [key in ProviderType]: ProviderDeserializer;
 } = {
@@ -20,7 +20,7 @@ export const PROVIDER_DESERIALIZE: {
 export type ProviderCreator = (
   job: ExecutorJobAccept,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-) => Promise<Provider<any, any, any, any>>;
+) => Promise<Provider<any, any, any, any, any>>;
 export const PROVIDER_CREATE: {
   [key in ProviderType]: ProviderCreator;
 } = {
@@ -63,9 +63,10 @@ export const OUTPUT_DIR = process.env.OUTPUT_DIR ?? "./library";
  */
 export abstract class Provider<
   TT extends { expiry: Date }, /// Transport type
+  PT extends ProcessInput, /// Process type
   S extends Service<TT>, /// Service
-  T extends Transport<TT>, /// Transport
-  P extends Processor, /// Processor
+  T extends Transport<TT, PT>, /// Transport
+  P extends Processor<PT>, /// Processor
 > {
   service: S;
   transport: T;
@@ -73,7 +74,8 @@ export abstract class Provider<
   job: ExecutorJobAccept;
   data: {
     initData?: InitData;
-    transportData?: TT;
+    serviceResult?: TT;
+    transportResult?: PT;
   } = {};
 
   constructor(service: S, transport: T, processor: P, job: ExecutorJobAccept) {
@@ -103,29 +105,39 @@ export abstract class Provider<
 
   async runService() {
     if (!this.data.initData) throw new Error("Out of order");
-    const transport = await this.service.fetch(this.job);
-    this.data.transportData = transport;
+    console.log("running service...");
+    const serviceResult = await this.service.fetch(this.job);
+    this.data.serviceResult = serviceResult;
   }
 
   async runTransport() {
-    if (!this.data.initData || !this.data.transportData)
+    if (!this.data.initData || !this.data.serviceResult)
       throw new Error("Out of order");
-    await this.transport.download(
-      this.data.transportData,
+    console.log("running transport...");
+    const transportResult = await this.transport.download(
+      this.data.serviceResult,
       this.data.initData.tmpDir,
     );
+    this.data.transportResult = transportResult;
   }
 
   async runProcessing() {
-    console.log("transport done");
+    if (!this.data.initData || !this.data.transportResult)
+      throw new Error("Out of order");
+    console.log("running processing...");
+    await this.processor.process(
+      this.data.transportResult,
+      this.data.initData.outputDir,
+    );
   }
 
   async finalize() {}
 
   fetchStatus(): ProviderStatus {
+    if (this.data.transportResult) return "processing";
     if (
-      this.data.transportData &&
-      Date.now() <= this.data.transportData.expiry.getTime()
+      this.data.serviceResult &&
+      Date.now() <= this.data.serviceResult.expiry.getTime()
     )
       return "transport";
     if (this.data.initData) return "service";

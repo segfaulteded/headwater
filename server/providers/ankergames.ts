@@ -1,7 +1,8 @@
 import type { ProviderSerialized } from ".";
 import { Provider } from ".";
 import type { ExecutorJobAccept } from "../executor";
-import { SevenZipProcessor } from "../processors/7zip";
+import type { SingleFileProcess } from "../processors";
+import { AnkerGamesSevenZipProcessor } from "../processors/ankergames-7zip";
 import AnkerGamesService from "../services/ankergames";
 import type { HTTPTransportData } from "../transports/http";
 import HTTPTransport from "../transports/http";
@@ -12,15 +13,16 @@ interface AnkerGamesInit {
 
 export class AnkerGamesProvider extends Provider<
   HTTPTransportData,
+  SingleFileProcess,
   AnkerGamesService,
   HTTPTransport,
-  SevenZipProcessor
+  AnkerGamesSevenZipProcessor
 > {
   constructor(init: AnkerGamesInit) {
     super(
       new AnkerGamesService(),
       new HTTPTransport(),
-      new SevenZipProcessor(),
+      new AnkerGamesSevenZipProcessor(),
       init.job,
     );
   }
