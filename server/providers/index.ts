@@ -15,6 +15,9 @@ export const PROVIDER_DESERIALIZE: {
   "ankergames-provider": (_serialized) => {
     throw "Not implemented yet.";
   },
+  "goggamesto-provider": (_serialized) => {
+    throw "Not implemented yet.";
+  }
 };
 
 export type ProviderCreator = (
@@ -28,6 +31,12 @@ export const PROVIDER_CREATE: {
     const { AnkerGamesProvider } = await import("./ankergames");
 
     const provider = new AnkerGamesProvider({ job });
+    return provider;
+  },
+  "goggamesto-provider": async (job) => {
+    const { GOGGamesToProvider } = await import("./goggamesto");
+
+    const provider = new GOGGamesToProvider(job);
     return provider;
   },
 };

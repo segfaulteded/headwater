@@ -7,7 +7,6 @@ import type {
 } from ".";
 import type { ExecutorJobAccept } from "../executor";
 import { fuzzy } from "fast-fuzzy";
-import parse from "node-html-parser";
 import type { TorrentTransportData } from "../transports/torrent";
 
 const gogGames = z.object({
@@ -15,15 +14,26 @@ const gogGames = z.object({
   slug: z.string(),
   title: z.string(),
   image: z.string(),
+  last_update: z.string().or(z.null()),
+  infohash: z.string().or(z.null()),
 });
 
 const API_BASE_URL = "https://gog-games.to/api";
-let GOGGAMES_CACHE: Array<z.infer<typeof gogGames>> | undefined = undefined;
+let GOGGAMES_CACHE: Map<string, z.infer<typeof gogGames>> | undefined =
+  undefined;
 async function fetchGOGGames() {
   if (GOGGAMES_CACHE) return GOGGAMES_CACHE;
   const result = await $fetch(`${API_BASE_URL}/web/all-games`);
-  const games = z.array(gogGames).parse(result);
-  GOGGAMES_CACHE = games;
+  const games = z
+    .array(gogGames)
+    .parse(result)
+    .filter((v) => v.infohash);
+  const gameMap = new Map();
+  for (const game of games) {
+    gameMap.set(game.slug, game);
+  }
+  GOGGAMES_CACHE = gameMap;
+  return GOGGAMES_CACHE;
 }
 
 // 1000 years
@@ -40,21 +50,24 @@ export class GOGGamesToService implements Service<TorrentTransportData> {
   }
 
   async query(opts: ServiceQueryOptions): Promise<ServiceQueryResponse> {
-    await fetchGOGGames();
-    const data = GOGGAMES_CACHE!;
+    const data = await fetchGOGGames();
     const results = data
+      .values()
       .map((v) => ({ ...v, score: fuzzy(v.title, opts.query) }))
       .filter((v) => v.score > 0.8)
+      .toArray()
       .sort((a, b) => a.score - b.score);
 
     return results.map(
       (v) =>
         ({
           job: {
-            id: v.id,
+            id: v.slug,
             libraryPath: v.slug,
-            version: "no-version",
-            provider: "ankergames-provider",
+            version: v.last_update
+              ? new Date(v.last_update).getTime().toString()
+              : "no-version",
+            provider: "goggamesto-provider",
           },
           title: v.title,
           description: "",
@@ -64,19 +77,29 @@ export class GOGGamesToService implements Service<TorrentTransportData> {
   }
 
   async fetch(job: ExecutorJobAccept): Promise<TorrentTransportData> {
-    const htmlRaw = await $fetch<string>(
-      `${API_BASE_URL}/web/query-game/${job.id}`,
-    );
-    const html = parse(htmlRaw);
+    const data = await fetchGOGGames();
 
-    const magnetButton = html.querySelector(".btn-torrent");
-    const magnetUrl = magnetButton?.attributes?.["href"];
-    if (!magnetUrl) throw new Error("Failed to find magnet URL in webpage");
+    const game = data.get(job.id);
+    if (!game) throw new Error("Invalid ID");
+    if (
+      game.last_update &&
+      job.version !== new Date(game.last_update).getTime().toString()
+    )
+      throw new Error("Mismatched version");
+
+    const magnet = "magnet:?xt=urn:btih:"
+      .concat(game.infohash!, "&tr=")
+      .concat("udp://tracker.opentrackr.org:1337/announce", "&tr=")
+      .concat("udp://exodus.desync.com:6969/announce", "&tr=")
+      .concat("udp://open.stealth.si:80/announce", "&tr=")
+      .concat("udp://tracker-udp.gbitt.info:80/announce");
 
     return {
       type: "magnet",
-      url: magnetUrl,
+      url: magnet,
       expiry: new Date(Date.now() + forever),
+      id: job.id,
+      version: job.version,
     };
   }
 }
